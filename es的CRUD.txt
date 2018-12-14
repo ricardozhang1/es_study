@@ -1,0 +1,369 @@
+#es的文档，索引的CRUD
+PUT lagou
+{
+  "settings": {
+    "index":{
+      "number_of_shards":5,
+      "number_of_replicas":1
+    }
+  }
+}
+
+GET lagou/_settings
+GET _all/_settings
+GET .kibana,lagou/_settings
+GET _settings
+
+
+# 修改settings
+PUT lagou/_settings
+{
+  "number_of_replicas": 3
+}
+
+# 获取索引信息
+GET _all
+GET lagou
+
+PUT lagou/job/2
+{
+  "title":"scrapy 工程师",
+  "salary_min":20000,
+  "city":"深圳",
+  "company":{
+    "name":"百度",
+    "company_addr":"深圳市白云区"
+  },
+  "publish_date":"2017-4-16",
+  "comments":15
+}
+
+PUT lagou/job/1
+{
+  "title":"python django 开发工程师",
+  "salary_min":30000,
+  "city":"上海",
+  "company":{
+    "name":"美团科技",
+    "company_addr":"北京市软件园A区"
+  },
+  "publish_date":"2017-4-16",
+  "comments":20
+}
+
+
+GET lagou/job/2
+GET lagou/job/1?_source=title
+GET lagou/job/1?_source=title,city
+GET lagou/job/2?_source
+
+# 修改内容
+PUT lagou/job/2
+{
+  "title":"scrapy 工程师",
+  "salary_min":20000,
+  "city":"深圳",
+  "company":{
+    "name":"百度",
+    "company_addr":"深圳市白云区A"
+  },
+  "publish_date":"2017-4-16",
+  "comments":69
+}
+
+
+POST lagou/job/1/_update
+{
+  "doc":{
+    "comments":32
+  }
+}
+
+
+# 删除
+DELETE lagou/job/1
+DELETE lagou/job
+DELETE lagou
+
+
+# ----------------------------------
+
+PUT testdb
+{
+  "settings": {
+    "index":{
+      "number_of_shards":5,
+      "number_of_replicas":1
+    }
+  }
+}
+
+PUT testdb/job1/1
+{
+  "title":"scrapy 工程师",
+  "salary_min":20000,
+  "city":"深圳",
+  "company":{
+    "name":"百度",
+    "company_addr":"深圳市白云区A"
+  },
+  "publish_date":"2017-4-16",
+  "comments":69
+}
+
+PUT testdb/job2/2
+{
+  "title":"scrapy 工程师",
+  "salary_min":20000,
+  "city":"广州",
+  "company":{
+    "name":"腾讯",
+    "company_addr":"深圳市白云B区"
+  },
+  "publish_date":"2017-4-16",
+  "comments":15
+}
+
+# 批量查询
+GET _mget
+{
+  "docs":[
+    {"_index": "testdb",
+      "_type": "job1",
+      "_id": 1
+    },
+    {"_index": "testdb",
+      "_type": "job2",
+      "_id": 2
+    }
+    ]
+}
+
+GET testdb/_mget
+{
+  "docs":[
+    {
+      "_type": "job1",
+      "_id": 1
+    },
+    {
+      "_type": "job2",
+      "_id": 2
+    }
+    ]
+}
+
+
+GET testdb/job1/_mget
+{
+  "docs":[
+    {
+      "_id": 1
+    },
+    {
+      "_id": 2
+    }
+    ]
+}
+
+
+GET testdb/job1/_mget
+{
+  "ids":[1,2]
+}
+
+
+# 批量写入_bulk操作
+POST _bulk
+{"index":{"_index":"lagou", "_type":"job1", "_id":"1"}}
+{"title":"python scrapy spider","salary_min":1500,"city":"Beijing","company":{"name":"Baidu","company_addr":"The soft park of Beijing"},"publish_date":"2017-4-16","comments":15}
+{"index":{"_index":"lagou", "_type":"job2", "_id":"2"}}
+{"title":"python Gjango","salary_min":5000,"city":"Chengdu","company":{"name":"alibaba","company_addr":"The soft park A of Chengdu"},"publish_date":"2017-4-25","comments":56}
+
+
+# 创建索引
+PUT lagou
+{
+  "mappings":{
+    "job":{
+      "properties": {
+        "title": {
+          "type":"text"
+        },
+        "salary_min":{
+          "type": "integer"
+        },
+        "city":{
+          "type": "keyword"
+        },
+        "company":{
+          "properties": {
+            "name":{
+              "type":"text"
+            },
+            "company_addr":{
+              "type":"text"
+            },
+            "employee_count":{
+              "type":"integer"
+            }
+          }
+        },
+        "publish_date":{
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "comments":{
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+
+# 放入数据
+PUT lagou/job/2
+{
+  "title":"python scrapy spider",
+  "salary_min":1520,
+  "city":"Xiamen",
+  "company":{
+    "name":"Baidu",
+    "company_addr":"The soft park 2 of Xiamen",
+    "employee_count":50
+  },
+  "publish_date":"2017-4-18",
+  "comments":15
+}
+
+
+# -------------------------------------
+
+# 添加映射
+PUT lagou
+{
+  "mappings": {
+    "job": {
+      "properties": {
+        "title":{
+          "store": true,
+          "type": "text",
+          "analyzer": "ik_max_word"
+        },
+        "company_name":{
+          "store": true,
+          "type": "keyword"
+        },
+        "desc":{
+          "type": "text"
+        },
+        "comments":{
+          "type": "integer"
+        },
+        "add_time":{
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        }
+      }
+    }
+  }
+}
+
+
+
+POST lagou/job
+{
+  "title":"python django 开发工程师",
+  "company_name":"美团科技有限公司",
+  "desc":"对Django的概念熟悉，熟悉Python的基础知识",
+  "comments":20,
+  "add_time":"2017-4-2"
+}
+
+
+POST lagou/job
+{
+  "title":"python scrapy redis 分布式爬虫基本",
+  "company_name":"百度科技有限公司",
+  "desc":"对scrapy的概念熟悉，熟悉Redis的基本操作",
+  "comments":5,
+  "add_time":"2017-5-23"
+}
+
+
+POST lagou/job
+{
+  "title":"elasticsearch打造搜索引擎",
+  "company_name":"阿里巴巴科技有限公司",
+  "desc":"熟悉数据结构算法，熟悉Python的基本开发",
+  "comments":15,
+  "add_time":"2017-8-6"
+}
+
+
+POST lagou/job
+{
+  "title":"python打造推荐引擎系统",
+  "company_name":"阿里巴巴科技有限公司",
+  "desc":"熟悉推荐引擎的原理以及算法，掌握C语言",
+  "comments":60,
+  "add_time":"2016-9-20"
+}
+
+
+# match查询
+GET lagou/job/_search
+{
+  "query": {
+    "match": {
+      "title": "python"
+    }
+  }
+}
+
+# term查询
+GET lagou/_search
+{
+  "query": {
+    "term": {
+        "company_name": "阿里巴巴科技有限公司"
+    }
+  }
+}
+
+
+# terms查询
+GET lagou/_search
+{
+  "query": {
+    "terms": {
+      "title": [
+        "工程师",
+        "django",
+        "系统"
+      ]
+    }
+  }
+}
+
+
+# 控制查询的返回数量
+GET lagou/_search
+{
+  "query": {
+    "match": {
+      "title": "python"
+    }
+  },
+  "from":0,
+  "size":3
+}
+
+
+# match_all 查询
+GET lagou/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
