@@ -1,0 +1,178 @@
+# bool查询
+# 老版本的filtered已经被bool替换
+# yong用bool包括must，should，must_not, filter来完成
+# 格式如下
+# bool:{
+#  "filter":[],
+#  "must":[],
+#  "should":[],
+#  "must_not":[]
+#}
+
+# 建立测试数据
+POST lagou/testjob/_bulk
+{"index":{"_id":1}}
+{"salary":10, "title":"Python"}
+{"index":{"_id":2}}
+{"salary":20, "title":"Scrapy"}
+{"index":{"_id":3}}
+{"salary":30, "title":"Django"}
+{"index":{"_id":4}}
+{"salary":30, "title":"Elasticsearch"}
+
+
+# 简单的过滤查询
+
+
+# 最简单的filter查询
+# select * from testjob where comments=20
+# 薪资为20k的工具
+GET lagou/testjob/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match_all": {}}
+      ],
+      "filter": {
+        "term": {
+          "salary": 30
+        }
+      }
+    }
+  }
+}
+
+# 也可以指定多个值
+GET lagou/testjob/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match_all": {}}
+      ],
+      "filter": {
+        "terms": {
+          "salary": [10,30]
+        }
+        }
+      }
+    }
+  }
+}
+
+
+# select * from testjob where title="Python"
+GET lagou/testjob/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match_all": {}}
+      ],
+      "filter": {
+        "term": {
+          "title": "python"
+        }
+      }
+    }
+  }
+}
+
+
+
+# 查看分析器解析的结果
+GET _analyze
+{
+  "analyzer": "ik_smart",
+  "text": ["Python网络开发工程师"]
+}
+
+
+# 过滤查询，可以做组合过滤查询
+
+# select * from testjob where(salary=20 OR title=Python) AND (salary != 30)
+
+# 查询薪资等于20k或者工作为Python，排除薪资为30k的
+
+GET lagou/testjob/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"term": {"salary":20}},
+        {"term": {"title":"python"}}
+      ],
+      "must_not": [
+        {"term": {"price":30}}
+      ]
+    }
+  }
+}
+
+
+# 嵌套查询
+# select * from testjob where title="python" or (title="django" AND salary=30)
+
+GET lagou/testjob/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {"term": {"title":"python"}},
+        {"bool":{
+          "must":[
+            {"term":{"title":"ealaticsearch"}},
+            {"term":{"salary":30}}
+            ]
+        }}
+      ]
+    }
+  }
+}
+
+
+
+# 过滤 空和非空
+# 建立测试数据集
+POST lagou/testjob2/_bulk
+{"index":{"_id":"1"}}
+{"tags":["search"]}
+{"index":{"_id":"2"}}
+{"tags":["search","python"]}
+{"index":{"_id":"3"}}
+{"tags":["search","some data"]}
+{"index":{"_id":"4"}}
+{"tags":null}
+{"index":{"_id":"5"}}
+{"tags":["search", null]}
+
+
+# 处理null空值的方法
+# select tags from testjob2 where tags is not NULL
+GET lagou/testjob2/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "exists": {
+          "field": "tags"
+        }
+      }
+    }
+  }
+}
+
+
+GET lagou/testjob2/_search
+{
+  "query": {
+    "bool":{
+      "must_not":{
+        "exists":{
+          "field":"tags"
+        }
+      }
+    }
+  }
+}
